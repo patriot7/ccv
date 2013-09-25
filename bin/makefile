@@ -1,15 +1,16 @@
 include ../lib/config.mk
 
 #CC += -faddress-sanitizer -fno-omit-frame-pointer
-LDFLAGS := -L"../lib" -lccv $(LDFLAGS)
-CFLAGS := -O3 -Wall -I"../lib" $(CFLAGS)
+LDFLAGS := -L"../lib" -lccv $(LDFLAGS) -lgomp
+CFLAGS := -O3 -Wall -I"../lib" $(CFLAGS) -fopenmp
 
-TARGETS = bbffmt msermatch siftmatch bbfcreate bbfdetect swtcreate swtdetect dpmcreate dpmdetect convert tld icfcreate icfdetect icfoptimize cifar-10
+TARGETS =  bbfdetect
 
 all: libccv.a $(TARGETS)
 
 clean:
-	${MAKE} clean -C ../lib ; rm -f *.o $(TARGETS)
+#	${MAKE} clean -C ../lib ; rm -f *.o $(TARGETS)
+	rm -f *.o $(TARGETS)
 
 $(TARGETS): %: %.o libccv.a
 	$(CC) -o $@ $< $(LDFLAGS)
