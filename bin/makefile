@@ -1,10 +1,10 @@
 include ../lib/config.mk
 
 #CC += -faddress-sanitizer -fno-omit-frame-pointer
-LDFLAGS := -L"../lib" -lccv $(LDFLAGS) -lgomp
-CFLAGS := -O3 -Wall -I"../lib" $(CFLAGS) -fopenmp
+LDFLAGS := -L"../lib" -lccv $(LDFLAGS)
+CFLAGS := -O3 -Wall -I"../lib" $(CFLAGS)
 
-TARGETS =  bbfdetect
+TARGETS =  bbfdetect canny
 
 all: libccv.a $(TARGETS)
 
