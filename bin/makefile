@@ -10,7 +10,7 @@ all: libccv.a $(TARGETS)
 
 clean:
 #	${MAKE} clean -C ../lib ; rm -f *.o $(TARGETS)
-	rm -f *.o $(TARGETS)
+	rm -f *.o *.png *.jpeg $(TARGETS)
 
 $(TARGETS): %: %.o libccv.a
 	$(CC) -o $@ $< $(LDFLAGS)

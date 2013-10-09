@@ -5,21 +5,16 @@
 #include <stdio.h>
 #include <omp.h>
 
-#define FULL_HEIGHT 1993
-#define FULL_WIDTH 3000
-#define SLICE_V 6
-#define SLICE_H 5
-#define HEIGHT FULL_HEIGHT / SLICE_H
-#define WIDTH FULL_WIDTH / SLICE_V
+//#define DEBUG
 
-unsigned int get_current_time()
-{
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	return tv.tv_sec * 1000 + tv.tv_usec / 1000;
-}
+#define X_SLICE 6
+#define Y_SLICE 5
 
-int main(int argc, char** argv)
+unsigned int get_current_time(void);
+void cos_ccv_slice_output(ccv_dense_matrix_t* mat, int x, int y);
+
+int
+main(int argc, char** argv)
 {
 	assert(argc >= 3);
 	int i, j;
@@ -38,19 +33,20 @@ int main(int argc, char** argv)
         ccv_array_free(seq);
 
         int sliced_total = 0;
+        int slice_rows = image->rows / Y_SLICE;
+        int slice_cols = image->cols / X_SLICE;
         sliced_elapsed_time = get_current_time();
 #pragma omp parallel for private(j)
-        for (i = 0; i < SLICE_H; i++) {
+        for (i = 0; i < Y_SLICE; i++) {
                 ccv_dense_matrix_t* sliced_full_width = 0;
-                ccv_slice(image, (ccv_matrix_t**)&sliced_full_width, 0, HEIGHT * i, 0, HEIGHT, FULL_WIDTH);
-                for (j = 0; j < SLICE_V; j++) {
+                ccv_slice(image, (ccv_matrix_t**)&sliced_full_width, 0, slice_rows * i, 0, slice_rows, image->cols);
+                for (j = 0; j < X_SLICE; j++) {
                         ccv_dense_matrix_t* sliced_final = 0;
-                        ccv_slice(sliced_full_width, (ccv_matrix_t**)&sliced_final, 0, 0, WIDTH * j, HEIGHT, WIDTH);
-                        //char filename[20];
-                        //sprintf(filename, "%d_%d.jpeg", x, y);
-                        //ccv_write(slice_area, filename, 0, CCV_IO_JPEG_FILE, 0);
+                        ccv_slice(sliced_full_width, (ccv_matrix_t**)&sliced_final, 0, 0, slice_cols * j, slice_rows, slice_cols);
+#ifdef DEBUG
+                        cos_ccv_slice_output(sliced_final, j, i);
+#endif
                         seq = ccv_bbf_detect_objects(sliced_final, &cascade, 1, ccv_bbf_default_params);
-                        //printf("pic %d_%d: %d face detected\n", x, y, seq_sliced->rnum);
                         sliced_total += seq->rnum;
                 }
         }
@@ -62,4 +58,21 @@ int main(int argc, char** argv)
 	ccv_bbf_classifier_cascade_free(cascade);
 	ccv_disable_cache();
 	return 0;
+}
+
+unsigned int
+get_current_time(void)
+{
+	struct timeval tv;
+	gettimeofday(&tv, 0);
+	return tv.tv_sec * 1000 + tv.tv_usec / 1000;
+}
+
+void
+cos_ccv_slice_output(ccv_dense_matrix_t* mat, int x, int y)
+{
+        char filename[11]; /* 99_99.jpeg max */
+        sprintf(filename, "%d_%d.jpeg", x, y);
+        ccv_write(mat, filename, 0, CCV_IO_JPEG_FILE, 0);
+        return;
 }
