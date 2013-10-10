@@ -7,8 +7,8 @@
 
 //#define DEBUG
 
-#define X_SLICE 6
-#define Y_SLICE 5
+#define X_SLICE 7 
+#define Y_SLICE 5 
 
 unsigned int get_current_time(void);
 void cos_ccv_slice_output(ccv_dense_matrix_t* mat, int x, int y);
@@ -29,29 +29,31 @@ main(int argc, char** argv)
         orig_elapsed_time = get_current_time();
         seq = ccv_bbf_detect_objects(image, &cascade, 1, ccv_bbf_default_params);
         orig_elapsed_time = get_current_time() - orig_elapsed_time;
-        printf("origin total : %d in time %dms\n", seq->rnum, orig_elapsed_time);
+        //printf("origin total : %d in time %dms\n", seq->rnum, orig_elapsed_time);
+        printf("origin time: %dms\n", orig_elapsed_time);
         ccv_array_free(seq);
 
         int sliced_total = 0;
         int slice_rows = image->rows / Y_SLICE;
         int slice_cols = image->cols / X_SLICE;
+
+        int x, y, i, count = X_SLICE * Y_SLICE;
         sliced_elapsed_time = get_current_time();
-#pragma omp parallel for private(j)
-        for (i = 0; i < Y_SLICE; i++) {
-                ccv_dense_matrix_t* sliced_full_width = 0;
-                ccv_slice(image, (ccv_matrix_t**)&sliced_full_width, 0, slice_rows * i, 0, slice_rows, image->cols);
-                for (j = 0; j < X_SLICE; j++) {
-                        ccv_dense_matrix_t* sliced_final = 0;
-                        ccv_slice(sliced_full_width, (ccv_matrix_t**)&sliced_final, 0, 0, slice_cols * j, slice_rows, slice_cols);
+#pragma omp parallel for private(x, y)
+        for (i = 0; i < count; i++) {
+                y = i / 7;
+                x = i - 7 * y;
+                ccv_dense_matrix_t* slice = 0;
+                ccv_slice(image, (ccv_matrix_t**)&slice, 0, slice_rows * y, slice_cols * x, slice_rows, slice_cols);
+                seq = ccv_bbf_detect_objects(slice, &cascade, 1, ccv_bbf_default_params);
+                //sliced_total += seq->rnum;
 #ifdef DEBUG
-                        cos_ccv_slice_output(sliced_final, j, i);
+                cos_ccv_slice_output(sliced_final, x, y);
 #endif
-                        seq = ccv_bbf_detect_objects(sliced_final, &cascade, 1, ccv_bbf_default_params);
-                        sliced_total += seq->rnum;
-                }
         }
         sliced_elapsed_time = get_current_time() - sliced_elapsed_time;
-        printf("total : %d in time %dms\n", sliced_total, sliced_elapsed_time);
+        //printf("total : %d in time %dms\n", sliced_total, sliced_elapsed_time);
+        printf("openmp time: %dms\n", sliced_elapsed_time);
         ccv_array_free(seq);
 
         ccv_matrix_free(image);
