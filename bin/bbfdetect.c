@@ -17,7 +17,6 @@ int
 main(int argc, char** argv)
 {
 	assert(argc >= 3);
-	int i, j;
 	ccv_enable_default_cache();
 	ccv_dense_matrix_t* image = 0;
 	ccv_bbf_classifier_cascade_t* cascade = ccv_bbf_read_classifier_cascade(argv[2]);
@@ -41,8 +40,8 @@ main(int argc, char** argv)
         sliced_elapsed_time = get_current_time();
 #pragma omp parallel for private(x, y)
         for (i = 0; i < count; i++) {
-                y = i / 7;
-                x = i - 7 * y;
+                y = i / X_SLICE;
+                x = i - X_SLICE * y;
                 ccv_dense_matrix_t* slice = 0;
                 ccv_slice(image, (ccv_matrix_t**)&slice, 0, slice_rows * y, slice_cols * x, slice_rows, slice_cols);
                 seq = ccv_bbf_detect_objects(slice, &cascade, 1, ccv_bbf_default_params);
