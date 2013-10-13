@@ -1,10 +1,10 @@
 #include "ccv.h"
 #include <sys/time.h>
 
-#define DEBUG
+//#define DEBUG
 
 #define X_SLICE 7
-#define Y_SLICE 3 
+#define Y_SLICE 5 
 
 unsigned int get_current_time(void);
 void cos_ccv_slice_output(ccv_dense_matrix_t* mat, int x, int y);
@@ -70,11 +70,11 @@ cos_ccv_merge(ccv_dense_matrix_t* mat[], int rows, int cols, int x, int y)
         ccv_dense_matrix_t* merged = 0;
         merged = ccv_dense_matrix_new(rows, cols, mat[0]->type, 0, 0);
 
-        int i;
+        unsigned long long i;
         int slice_rows = mat[0]->rows;
         int slice_step= mat[0]->step;
         int slice_num = x * y;
-        int pixel_num = slice_rows * mat[0]->cols;
+        unsigned long long pixel_num = slice_rows * slice_step; 
 #pragma omp parallel for
         for (i = 0; i < slice_num; i++) {
                 int x_offset = i % x;
@@ -83,11 +83,11 @@ cos_ccv_merge(ccv_dense_matrix_t* mat[], int rows, int cols, int x, int y)
                 for (j = 0; j < pixel_num; j++) {
                         mrow = j / slice_step;
                         mcol = j - slice_step * mrow;
-                        merged->data.u8[(y_offset * slice_rows + mrow) * cols + x_offset * slice_step + mcol] = mat[i]->data.u8[mrow * slice_step + mcol];
+                        merged->data.u8[(y_offset * slice_rows + mrow) * merged->step + x_offset * slice_step + mcol] = mat[i]->data.u8[mrow * slice_step + mcol];
                 }
         }
 #ifdef DEBUG
-        int merged_pixel_num = rows * cols;
+        unsigned long long merged_pixel_num = rows * cols;
         for (i = 0; i < merged_pixel_num; i++) {
                 if (merged->data.u8[i] != 0) merged->data.u8[i] = 255;
         }
