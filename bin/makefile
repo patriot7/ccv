@@ -4,7 +4,7 @@ include ../lib/config.mk
 LDFLAGS := -L"../lib" -lccv $(LDFLAGS)
 CFLAGS := -O3 -Wall -I"../lib" $(CFLAGS)
 
-TARGETS =  bbfdetect canny
+TARGETS = bbfdetect canny
 
 all: libccv.a $(TARGETS)
 

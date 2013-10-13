@@ -1,34 +1,36 @@
 #include "ccv.h"
 #include <sys/time.h>
+#include <stdlib.h>
 
 //#define DEBUG
-
-#define X_SLICE 7 
-#define Y_SLICE 5 
+//#define X_SLICE 7 
+//#define Y_SLICE 5 
 
 unsigned int get_current_time(void);
 void cos_ccv_slice_output(ccv_dense_matrix_t* mat, int x, int y);
-ccv_dense_matrix_t* cos_ccv_merge(ccv_dense_matrix_t* mat[], int rows, int cols, int x, int y);
+void cos_ccv_merge(ccv_dense_matrix_t* mat[], ccv_dense_matrix_t** output, int rows, int cols, int x, int y);
 
 int
 main(int argc, char** argv)
 {
-	ccv_enable_default_cache();
+        printf("Edge Detection Benchmark ...\n");
 
+	ccv_enable_default_cache();
         unsigned int elapsed_time;
         ccv_dense_matrix_t* yuv = 0;
         ccv_read(argv[1], &yuv, CCV_IO_GRAY | CCV_IO_ANY_FILE);
 
-        /* original edge detection time */
+        /* ORIGIN */
         ccv_dense_matrix_t* canny = 0;
         elapsed_time = get_current_time();
         ccv_canny(yuv, &canny, 0, 3, 175, 320);
         elapsed_time = get_current_time() - elapsed_time;
-        printf("origin total: in time %d ms\n", elapsed_time);
+        printf("origin: %ums\n", elapsed_time);
         ccv_matrix_free(canny);
 
 
-        /* sliced edge detection time */
+        /* SLICE & DETECT */
+        int X_SLICE = atoi(argv[2]), Y_SLICE = atoi(argv[3]);
         int i, count = X_SLICE * Y_SLICE;
         int slice_rows = yuv->rows / Y_SLICE;
         int slice_cols = yuv->cols / X_SLICE;
@@ -47,15 +49,19 @@ main(int argc, char** argv)
                 ccv_canny(slice, &canny_arr[i], 0, 3, 175, 320);
         }
         elapsed_time = get_current_time() - elapsed_time;
-        printf("slice: in time %d ms\n", elapsed_time);
+        printf("slice & detect: %ums\n", elapsed_time);
+
+        unsigned int slice_time = elapsed_time; /* save to compute total time */
 
         /* MERGE */
-        elapsed_time = get_current_time();
         ccv_dense_matrix_t* final_output = 0;
-        final_output = cos_ccv_merge(canny_arr, yuv->rows, yuv->cols, X_SLICE, Y_SLICE);
+        elapsed_time = get_current_time();
+        cos_ccv_merge(canny_arr, &final_output, yuv->rows, yuv->cols, X_SLICE, Y_SLICE);
         elapsed_time = get_current_time() - elapsed_time;
-        printf("merge: in time %d ms\n", elapsed_time);
+        printf("merge: %ums\n", elapsed_time);
         ccv_matrix_free(final_output);
+
+        printf("parallel total: %ums\n", slice_time + elapsed_time);
 
         ccv_matrix_free(yuv);
 	ccv_disable_cache();
@@ -64,17 +70,17 @@ main(int argc, char** argv)
 }
 
 
-ccv_dense_matrix_t*
-cos_ccv_merge(ccv_dense_matrix_t* mat[], int rows, int cols, int x, int y)
+void
+cos_ccv_merge(ccv_dense_matrix_t* mat[], ccv_dense_matrix_t** output, int rows, int cols, int x, int y)
 {
         ccv_dense_matrix_t* merged = 0;
         merged = ccv_dense_matrix_new(rows, cols, mat[0]->type, 0, 0);
 
-        unsigned long long i;
+        unsigned int i; /* may not sufficient for extremely large pictures */
         int slice_rows = mat[0]->rows;
         int slice_step= mat[0]->step;
         int slice_num = x * y;
-        unsigned long long pixel_num = slice_rows * slice_step; 
+        unsigned int pixel_num = slice_rows * slice_step; 
 #pragma omp parallel for
         for (i = 0; i < slice_num; i++) {
                 int x_offset = i % x;
@@ -86,14 +92,16 @@ cos_ccv_merge(ccv_dense_matrix_t* mat[], int rows, int cols, int x, int y)
                         merged->data.u8[(y_offset * slice_rows + mrow) * merged->step + x_offset * slice_step + mcol] = mat[i]->data.u8[mrow * slice_step + mcol];
                 }
         }
+        *output = merged;
+
 #ifdef DEBUG
-        unsigned long long merged_pixel_num = rows * cols;
+        unsigned int merged_pixel_num = rows * cols;
         for (i = 0; i < merged_pixel_num; i++) {
                 if (merged->data.u8[i] != 0) merged->data.u8[i] = 255;
         }
         cos_ccv_slice_output(merged, 99, 99);
 #endif
-        return merged;
+        return;
 }
 
 unsigned int
