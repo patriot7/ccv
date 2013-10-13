@@ -1,6 +1,9 @@
 #include "ccv.h"
 #include <sys/time.h>
+
+#include <stdio.h>
 #include <stdlib.h>
+#include <omp.h>
 
 //#define DEBUG
 //#define X_SLICE 7 
