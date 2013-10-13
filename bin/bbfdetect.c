@@ -7,8 +7,8 @@
 
 //#define DEBUG
 
-#define X_SLICE 7 
-#define Y_SLICE 5 
+#define X_SLICE 5 
+#define Y_SLICE 7
 
 unsigned int get_current_time(void);
 void cos_ccv_slice_output(ccv_dense_matrix_t* mat, int x, int y);
@@ -28,7 +28,7 @@ main(int argc, char** argv)
         orig_elapsed_time = get_current_time();
         seq = ccv_bbf_detect_objects(image, &cascade, 1, ccv_bbf_default_params);
         orig_elapsed_time = get_current_time() - orig_elapsed_time;
-        //printf("origin total : %d in time %dms\n", seq->rnum, orig_elapsed_time);
+        printf("origin total : %d in time %dms\n", seq->rnum, orig_elapsed_time);
         printf("origin time: %dms\n", orig_elapsed_time);
         ccv_array_free(seq);
 
@@ -45,13 +45,13 @@ main(int argc, char** argv)
                 ccv_dense_matrix_t* slice = 0;
                 ccv_slice(image, (ccv_matrix_t**)&slice, 0, slice_rows * y, slice_cols * x, slice_rows, slice_cols);
                 seq = ccv_bbf_detect_objects(slice, &cascade, 1, ccv_bbf_default_params);
-                //sliced_total += seq->rnum;
+                sliced_total += seq->rnum;
 #ifdef DEBUG
                 cos_ccv_slice_output(sliced_final, x, y);
 #endif
         }
         sliced_elapsed_time = get_current_time() - sliced_elapsed_time;
-        //printf("total : %d in time %dms\n", sliced_total, sliced_elapsed_time);
+        printf("total : %d in time %dms\n", sliced_total, sliced_elapsed_time);
         printf("openmp time: %dms\n", sliced_elapsed_time);
         ccv_array_free(seq);
 

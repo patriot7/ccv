@@ -3,7 +3,7 @@
 
 //#define DEBUG
 
-#define X_SLICE 7
+#define X_SLICE 7 
 #define Y_SLICE 5 
 
 unsigned int get_current_time(void);
