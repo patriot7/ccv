@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <omp.h>
 
-//#define DEBUG
+#define DEBUG
 //#define X_SLICE 7 
 //#define Y_SLICE 5 
 

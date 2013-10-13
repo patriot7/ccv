@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <omp.h>
 
-//#define DEBUG
+#define DEBUG
 //#define X_SLICE 5 
 //#define Y_SLICE 7
 
@@ -47,7 +47,7 @@ main(int argc, char** argv)
                 ccv_array_t* sseq = ccv_bbf_detect_objects(slice, &cascade, 1, ccv_bbf_default_params);
                 sliced_total += sseq->rnum;
 #ifdef DEBUG
-                cos_ccv_slice_output(sliced_final, x, y);
+                cos_ccv_slice_output(slice, y, x);
 #endif
         }
         elapsed_time = get_current_time() - elapsed_time;
