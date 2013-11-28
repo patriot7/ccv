@@ -98,11 +98,9 @@ cos_ccv_merge(ccv_dense_matrix_t* mat[], ccv_dense_matrix_t** output, int rows, 
         *output = merged;
 
 #ifdef DEBUG
-        unsigned int merged_pixel_num = rows * cols;
-        for (i = 0; i < merged_pixel_num; i++) {
-                if (merged->data.u8[i] != 0) merged->data.u8[i] = 255;
-        }
-        cos_ccv_slice_output(merged, 99, 99);
+        ccv_dense_matrix_t *visualized_merged = 0;
+        ccv_visualize(merged, (ccv_matrix_t **)&visualized_merged, merged->type);
+        ccv_write(test, "canny_final_output.jpeg", 0, CCV_IO_JPEG_FILE, 0);
 #endif
         return;
 }
